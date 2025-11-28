@@ -985,8 +985,14 @@ const Editor = () => {
 
     try {
       setSaveStatus('saving');
-      
+
       const token = localStorage.getItem('token');
+      if (!token) {
+        alert('You are not logged in. Please log in to export PDF.');
+        setSaveStatus('error');
+        return;
+      }
+
       await exportResumeAsHtmlPdf(currentResumeId, previewRef, token);
 
       setSaveStatus('saved');
@@ -994,7 +1000,10 @@ const Editor = () => {
     } catch (error) {
       console.error('Error exporting PDF:', error);
       setSaveStatus('error');
-      alert('Failed to export PDF. Please try again.');
+
+      // Show detailed error message
+      const errorMessage = error.message || 'Failed to export PDF. Please try again.';
+      alert(`PDF Export Failed\n\n${errorMessage}\n\nPlease check the console for more details or contact support.`);
     }
   };
 
@@ -2766,7 +2775,6 @@ const Editor = () => {
           <div className="realtime-preview-content">
             <div className="resume-preview-wrapper">
               <ResumePreview
-                ref={previewRef}
                 cvData={cvData}
                 customization={customization}
                 template={{
@@ -2784,6 +2792,24 @@ const Editor = () => {
         </div>
       </div>
     )}
+
+    {/* Hidden Preview for PDF Export - Always rendered but hidden */}
+    <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', visibility: 'hidden' }}>
+      <ResumePreview
+        ref={previewRef}
+        cvData={cvData}
+        customization={customization}
+        template={{
+          ...currentTemplate,
+          sections: {
+            ...currentTemplate.sections,
+            order: sectionOrder,
+            visible: sectionVisibility
+          }
+        }}
+        editable={false}
+      />
+    </div>
 
     {/* Share Modal */}
     {showShareModal && (

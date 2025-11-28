@@ -12,7 +12,14 @@ exports.exportPdfFromHtml = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const { html, css } = req.body;
 
+  console.log('📥 PDF Export Request received');
+  console.log(`  Resume ID: ${id}`);
+  console.log(`  User ID: ${req.user?.id}`);
+  console.log(`  HTML provided: ${!!html}`);
+  console.log(`  CSS provided: ${!!css}`);
+
   if (!html || !css) {
+    console.error('❌ Missing HTML or CSS in request');
     return next(new ErrorResponse('HTML and CSS are required', 400));
   }
 
@@ -23,25 +30,43 @@ exports.exportPdfFromHtml = asyncHandler(async (req, res, next) => {
   });
 
   if (!resume) {
+    console.error('❌ Resume not found');
     return next(new ErrorResponse('Resume not found', 404));
   }
 
+  console.log(`✅ Resume found: ${resume.title}`);
+
   try {
     const decryptedContent = decryptResumePersonalData(resume.content);
-    
+    console.log('✅ Content decrypted');
+
     const buffer = await generatePdfFromHtml({ html, css });
+    console.log(`✅ PDF buffer generated: ${buffer.length} bytes`);
+    console.log(`🔍 Buffer check: ${Buffer.isBuffer(buffer) ? 'OK' : 'WARNING - not a Buffer!'}`);
 
     const fileName = `${decryptedContent.personal?.fullName || 'Resume'}_${resume.title}.pdf`.replace(/\s+/g, '_');
+
+    // Set proper headers for PDF download with CORS
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:5173');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
 
-    res.send(buffer);
+    console.log(`✅ Headers set for: ${fileName}`);
+    console.log(`📤 Sending buffer as binary...`);
+
+    // Send as binary - Express will handle Buffer correctly
+    res.end(buffer, 'binary');
+    console.log(`✅ PDF sent successfully!`);
   } catch (error) {
-    console.error('HTML-to-PDF generation error:', error);
-    return next(new ErrorResponse('Failed to generate PDF file', 500));
+    console.error('❌ HTML-to-PDF generation error:', error.message);
+    console.error('❌ Full error:', error);
+    return next(new ErrorResponse(`Failed to generate PDF file: ${error.message}`, 500));
   }
 });
 

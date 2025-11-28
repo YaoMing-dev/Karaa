@@ -19,10 +19,20 @@ const getBrowser = async () => {
 };
 
 const generatePdfFromHtml = async ({ html, css }) => {
-  const browserInstance = await getBrowser();
-  const page = await browserInstance.newPage();
-  
+  console.log('📄 Starting PDF generation from HTML...');
+  console.log(`📏 HTML length: ${html ? html.length : 0} chars`);
+  console.log(`🎨 CSS length: ${css ? css.length : 0} chars`);
+
+  let browserInstance;
+  let page;
+
   try {
+    browserInstance = await getBrowser();
+    console.log('✅ Browser instance acquired');
+
+    page = await browserInstance.newPage();
+    console.log('✅ New page created');
+
     const fullHtml = `
       <!DOCTYPE html>
       <html lang="vi">
@@ -48,15 +58,26 @@ const generatePdfFromHtml = async ({ html, css }) => {
       </body>
       </html>
     `;
-    
+
+    console.log('📝 Setting page content...');
     await page.setContent(fullHtml, {
-      waitUntil: ['networkidle0', 'domcontentloaded'],
+      waitUntil: ['load', 'domcontentloaded', 'networkidle0'],
       timeout: 30000
     });
-    
-    await page.evaluateHandle('document.fonts.ready');
-    await page.waitForTimeout(500);
-    
+    console.log('✅ Content set successfully');
+
+    console.log('⏳ Waiting for fonts to load...');
+    // Wait for fonts using Promise (evaluateHandle returns a promise)
+    await page.evaluate(() => document.fonts.ready);
+    console.log('✅ Fonts loaded');
+
+    // Additional wait for complete rendering and layout calculation
+    // waitForTimeout is deprecated in Puppeteer v21+, use Promise instead
+    console.log('⏳ Waiting for layout stabilization...');
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    console.log('✅ Layout ready');
+
+    console.log('🖨️  Generating PDF...');
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -66,14 +87,34 @@ const generatePdfFromHtml = async ({ html, css }) => {
         bottom: '0mm',
         left: '0mm'
       },
-      preferCSSPageSize: false
+      preferCSSPageSize: false,
+      displayHeaderFooter: false,
+      timeout: 60000 // 60 second timeout for PDF generation
     });
-    
+
+    // Puppeteer v23+ returns Uint8Array, convert to Buffer for Node.js compatibility
+    const pdfBuffer = Buffer.isBuffer(pdf) ? pdf : Buffer.from(pdf);
+    console.log(`✅ PDF generated successfully! Size: ${pdfBuffer.length} bytes`);
+    console.log(`🔍 Buffer validation: ${Buffer.isBuffer(pdfBuffer) ? 'OK' : 'FAILED'}`);
+    console.log(`🔍 PDF Header: ${pdfBuffer.slice(0, 5).toString()}`);
+
     await page.close();
-    
-    return pdf;
+    console.log('✅ Page closed');
+
+    return pdfBuffer;
   } catch (error) {
-    await page.close();
+    console.error('❌ PDF generation error:', error.message);
+    console.error('❌ Error stack:', error.stack);
+
+    if (page) {
+      try {
+        await page.close();
+        console.log('✅ Page closed after error');
+      } catch (closeError) {
+        console.error('❌ Error closing page:', closeError.message);
+      }
+    }
+
     throw error;
   }
 };

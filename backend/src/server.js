@@ -7,6 +7,11 @@ const PORT = process.env.PORT || 5000;
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
+  // Don't crash on EADDRINUSE (port already in use)
+  if (err.code === 'EADDRINUSE') {
+    console.error('❌ Port already in use. Please stop other instances or change the port.');
+    process.exit(1);
+  }
   console.error('UNCAUGHT EXCEPTION! Shutting down...');
   console.error(err.name, err.message);
   process.exit(1);

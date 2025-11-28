@@ -53,9 +53,19 @@ export const captureResumePreviewHtml = (previewRef) => {
 
 export const exportResumeAsHtmlPdf = async (resumeId, previewRef, authToken) => {
   try {
-    const { html, css } = captureResumePreviewHtml(previewRef);
+    console.log('📥 Starting PDF export...');
+    console.log(`  Resume ID: ${resumeId}`);
+    console.log(`  Auth token present: ${!!authToken}`);
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/resumes/${resumeId}/export/pdf-html`, {
+    const { html, css } = captureResumePreviewHtml(previewRef);
+    console.log(`  HTML captured: ${html.length} chars`);
+    console.log(`  CSS captured: ${css.length} chars`);
+
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
+    const endpoint = `${apiUrl}/resumes/${resumeId}/export/pdf-html`;
+    console.log(`  API endpoint: ${endpoint}`);
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -65,24 +75,67 @@ export const exportResumeAsHtmlPdf = async (resumeId, previewRef, authToken) => 
       body: JSON.stringify({ html, css })
     });
 
+    console.log(`  Response status: ${response.status}`);
+    console.log(`  Response ok: ${response.ok}`);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to export PDF');
+      let errorMessage = 'Failed to export PDF';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+        console.error('❌ Server error response:', error);
+      } catch (e) {
+        console.error('❌ Could not parse error response');
+      }
+      throw new Error(errorMessage);
     }
 
     const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
+    console.log(`  PDF blob size: ${blob.size} bytes`);
+    console.log(`  PDF blob type: ${blob.type}`);
+
+    // Validate blob
+    if (blob.size === 0) {
+      throw new Error('Received empty PDF file');
+    }
+
+    // Ensure blob is of correct type
+    const pdfBlob = blob.type === 'application/pdf'
+      ? blob
+      : new Blob([blob], { type: 'application/pdf' });
+
+    console.log(`  Final blob type: ${pdfBlob.type}, size: ${pdfBlob.size}`);
+
+    // Check first few bytes to ensure it's a valid PDF
+    const arrayBuffer = await pdfBlob.slice(0, 5).arrayBuffer();
+    const header = new TextDecoder().decode(arrayBuffer);
+    console.log(`  PDF header check: "${header}"`);
+
+    if (!header.startsWith('%PDF-')) {
+      console.error('❌ Invalid PDF header!');
+      console.error('   This may indicate a corrupted download or server error.');
+      throw new Error('Downloaded file is not a valid PDF');
+    }
+
+    const url = window.URL.createObjectURL(pdfBlob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `resume_${Date.now()}.pdf`;
+    a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
 
+    // Cleanup after a short delay to ensure download starts
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }, 100);
+
+    console.log('✅ PDF exported successfully!');
     return { success: true };
   } catch (error) {
-    console.error('Export error:', error);
+    console.error('❌ Export error:', error.message);
+    console.error('❌ Full error:', error);
     throw error;
   }
 };

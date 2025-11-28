@@ -57,12 +57,15 @@ const sessionConfig = {
   }
 };
 
-// Use Redis store if client is connected (production)
-if (redisClient.isOpen) {
+// Use Redis store if client is connected and ready
+if (redisClient && redisClient.isOpen) {
   sessionConfig.store = new RedisStore({
     client: redisClient,
     prefix: 'sess:',
   });
+  console.log('✅ Using Redis for session storage');
+} else {
+  console.log('ℹ️  Using in-memory session storage (not recommended for production)');
 }
 
 app.use(session(sessionConfig));
@@ -81,15 +84,28 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('combined'));
 }
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW || 15) * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || 100),
-  message: 'Too many requests from this IP, please try again later'
-});
+// Rate limiting - Disabled in development mode for easier testing
+if (process.env.NODE_ENV === 'production') {
+  const limiter = rateLimit({
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW || 15) * 60 * 1000,
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || 100),
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    handler: (req, res) => {
+      res.status(429).json({
+        success: false,
+        message: 'Too many requests from this IP, please try again later',
+        error: 'Rate limit exceeded'
+      });
+    }
+  });
 
-// Apply rate limiting to API routes
-app.use('/api/', limiter);
+  // Apply rate limiting to API routes (production only)
+  app.use('/api/', limiter);
+  console.log('✅ Rate limiting enabled for production');
+} else {
+  console.log('⚠️  Rate limiting DISABLED in development mode');
+}
 
 // Serve static files (uploads)
 app.use('/uploads', express.static('uploads'));

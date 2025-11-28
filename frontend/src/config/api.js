@@ -78,6 +78,13 @@ export const apiRequest = async (url, options = {}) => {
       throw new Error('Session expired. Please login again.');
     }
 
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(text || 'Server returned non-JSON response');
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
