@@ -235,9 +235,13 @@ const Editor = () => {
   // ============================================================================
   const [customization, setCustomization] = useState({
     font: 'Inter',
-    fontSize: 'medium',
+    fontSize: 14,
+    primaryColor: '#3B82F6',
+    accentColor: '#1E40AF',
     colorScheme: 'blue',
-    spacing: 'normal',
+    spacing: 20,
+    lineHeight: 1.6,
+    margins: 40,
     layout: 'single-column',
     templateId: templateId || null,
     photoStyle: 'circle',
@@ -1350,17 +1354,17 @@ const Editor = () => {
     // RESET customization to template defaults (no carry-over from previous template)
     setCustomization({
       font: template.typography?.headingFont || 'Inter',
-      fontSize: 'medium',
+      fontSize: 14,
+      primaryColor: template.colors?.primary || '#3B82F6',
+      accentColor: template.colors?.secondary || '#1E40AF',
       colorScheme: template.category || 'blue',
-      spacing: 'normal',
+      spacing: 20,
+      lineHeight: 1.6,
+      margins: 40,
       layout: template.layout?.type || 'single-column',
       templateId: template._id,
       photoStyle: template.photoConfig?.style || 'circle',
-      photoPosition: template.photoConfig?.position || 'header',
-      primaryColor: template.colors?.primary || '#3B82F6',
-      accentColor: template.colors?.secondary || '#1E40AF',
-      lineHeight: 1.6,
-      margins: 40
+      photoPosition: template.photoConfig?.position || 'header'
     });
 
     // RESET section order to template defaults

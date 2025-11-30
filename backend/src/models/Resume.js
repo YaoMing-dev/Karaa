@@ -92,18 +92,62 @@ const ResumeSchema = new mongoose.Schema({
       default: 'Inter'
     },
     fontSize: {
+      type: Number,
+      min: 12,
+      max: 18,
+      default: 14
+    },
+    primaryColor: {
       type: String,
-      enum: ['small', 'medium', 'large'],
-      default: 'medium'
+      default: '#3B82F6',
+      validate: {
+        validator: function(v) {
+          return /^#[0-9A-F]{6}$/i.test(v);
+        },
+        message: props => `${props.value} is not a valid hex color!`
+      }
+    },
+    accentColor: {
+      type: String,
+      default: '#1E40AF',
+      validate: {
+        validator: function(v) {
+          return /^#[0-9A-F]{6}$/i.test(v);
+        },
+        message: props => `${props.value} is not a valid hex color!`
+      }
     },
     colorScheme: {
       type: String,
       default: 'blue'
     },
     spacing: {
+      type: Number,
+      min: 0,
+      max: 40,
+      default: 20
+    },
+    lineHeight: {
+      type: Number,
+      min: 1.3,
+      max: 2.0,
+      default: 1.6
+    },
+    margins: {
+      type: Number,
+      min: 10,
+      max: 60,
+      default: 40
+    },
+    photoStyle: {
       type: String,
-      enum: ['compact', 'normal', 'relaxed'],
-      default: 'normal'
+      enum: ['circle', 'rounded', 'square'],
+      default: 'circle'
+    },
+    photoPosition: {
+      type: String,
+      enum: ['header', 'sidebar'],
+      default: 'header'
     },
     layout: {
       type: String,

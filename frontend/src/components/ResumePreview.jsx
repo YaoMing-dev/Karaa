@@ -184,16 +184,30 @@ const ResumePreview = forwardRef(({
     return colors[colorName] || '#1E40AF';
   };
 
-  // Get template colors (prioritize template.colors over customization.colorScheme)
-  const templateColors = currentTemplate.colors || {
-    primary: getColorValue(customization?.colorScheme),
-    secondary: getSecondaryColor(customization?.colorScheme),
-    text: '#111827',
-    textLight: '#6B7280',
-    background: '#FFFFFF'
+  // Get template colors with priority: customization.primaryColor > colorScheme > template.colors
+  const primaryColor = customization?.primaryColor ||
+                       (customization?.colorScheme ? getColorValue(customization.colorScheme) : null) ||
+                       currentTemplate.colors?.primary ||
+                       '#3B82F6';
+
+  const secondaryColor = customization?.accentColor ||
+                         (customization?.colorScheme ? getSecondaryColor(customization.colorScheme) : null) ||
+                         currentTemplate.colors?.secondary ||
+                         '#1E40AF';
+
+  const templateColors = {
+    primary: primaryColor,
+    secondary: secondaryColor,
+    text: currentTemplate.colors?.text || '#111827',
+    textLight: currentTemplate.colors?.textLight || '#6B7280',
+    background: currentTemplate.colors?.background || '#FFFFFF'
   };
 
-  // Get template typography
+  // Get template typography with numeric fontSize support
+  const baseFontSize = typeof customization?.fontSize === 'number'
+    ? customization.fontSize
+    : 14; // Default if not set
+
   const templateTypography = currentTemplate.typography || {
     headingFont: customization?.font || 'Inter',
     bodyFont: customization?.font || 'Inter',
@@ -201,7 +215,7 @@ const ResumePreview = forwardRef(({
       name: '36px',
       heading: '20px',
       subheading: '17px',
-      body: `${14 * (customization?.fontSize === 'small' ? 0.9 : customization?.fontSize === 'large' ? 1.1 : 1.0)}px`
+      body: `${baseFontSize}px`
     }
   };
 
@@ -1385,7 +1399,11 @@ const ResumePreview = forwardRef(({
         '--column-gap': layoutColumns.gap || '24px',
         fontFamily: templateTypography.bodyFont,
         fontSize: templateTypography.sizes.body,
-        '--spacing-scale': customization?.spacing === 'compact' ? 0.8 : customization?.spacing === 'relaxed' ? 1.2 : 1.0,
+        lineHeight: customization?.lineHeight || 1.6,
+        padding: `${customization?.margins || 40}px`,
+        '--spacing-scale': typeof customization?.spacing === 'number'
+          ? customization.spacing / 20  // Normalize to scale (20px = 1.0)
+          : 1.0,
         background: templateColors.background,
         color: templateColors.text
       }}
