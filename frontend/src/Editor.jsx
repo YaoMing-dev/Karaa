@@ -534,8 +534,7 @@ const Editor = () => {
     };
 
     initializeResume();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [action, templateId, userDataPrefilled]);
+  }, [action, templateId, userDataPrefilled, currentResumeId, guestMode]);
 
   // Load existing resume if editing
   useEffect(() => {
@@ -1142,6 +1141,7 @@ const Editor = () => {
   };
 
   const updateCustomization = (key, value) => {
+    // console.log(`🔧 Updating customization: ${key} =`, value); // Uncomment to debug
     setCustomization(prev => ({
       ...prev,
       [key]: value

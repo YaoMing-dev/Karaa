@@ -95,7 +95,23 @@ const ResumeSchema = new mongoose.Schema({
       type: Number,
       min: 12,
       max: 18,
-      default: 14
+      default: 14,
+      get: function(val) {
+        // Backward compatibility: handle old string values when reading from DB
+        if (typeof val === 'string') {
+          const mapping = { small: 12, medium: 14, large: 16 };
+          return mapping[val] || 14;
+        }
+        return val || 14;
+      },
+      set: function(val) {
+        // Backward compatibility: convert old string values to numbers when saving
+        if (typeof val === 'string') {
+          const mapping = { small: 12, medium: 14, large: 16 };
+          return mapping[val] || 14;
+        }
+        return val;
+      }
     },
     primaryColor: {
       type: String,
@@ -125,7 +141,23 @@ const ResumeSchema = new mongoose.Schema({
       type: Number,
       min: 0,
       max: 40,
-      default: 20
+      default: 20,
+      get: function(val) {
+        // Backward compatibility: handle old string values when reading from DB
+        if (typeof val === 'string') {
+          const mapping = { compact: 15, normal: 20, relaxed: 25 };
+          return mapping[val] || 20;
+        }
+        return val || 20;
+      },
+      set: function(val) {
+        // Backward compatibility: convert old string values to numbers when saving
+        if (typeof val === 'string') {
+          const mapping = { compact: 15, normal: 20, relaxed: 25 };
+          return mapping[val] || 20;
+        }
+        return val;
+      }
     },
     lineHeight: {
       type: Number,
@@ -243,7 +275,9 @@ const ResumeSchema = new mongoose.Schema({
     default: null
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { getters: true },
+  toObject: { getters: true }
 });
 
 // Indexes

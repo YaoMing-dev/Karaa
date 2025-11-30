@@ -208,16 +208,32 @@ const ResumePreview = forwardRef(({
     ? customization.fontSize
     : 14; // Default if not set
 
-  const templateTypography = currentTemplate.typography || {
-    headingFont: customization?.font || 'Inter',
-    bodyFont: customization?.font || 'Inter',
+  // Helper function to scale fontSize based on baseFontSize
+  // Default base is 14px, scale all sizes proportionally
+  const scaleFontSize = (defaultSize) => {
+    const scale = baseFontSize / 14;
+    return `${Math.round(defaultSize * scale)}px`;
+  };
+
+  // ALWAYS prioritize customization over template
+  const templateTypography = {
+    headingFont: customization?.font || currentTemplate.typography?.headingFont || 'Inter',
+    bodyFont: customization?.font || currentTemplate.typography?.bodyFont || 'Inter',
     sizes: {
-      name: '36px',
-      heading: '20px',
-      subheading: '17px',
-      body: `${baseFontSize}px`
+      name: scaleFontSize(36),      // Scaled from 36px
+      heading: scaleFontSize(20),   // Scaled from 20px
+      subheading: scaleFontSize(17), // Scaled from 17px
+      body: `${baseFontSize}px`,    // Direct value
+      small: scaleFontSize(13),     // Scaled from 13px
+      large: scaleFontSize(16),     // Scaled from 16px
+      xlarge: scaleFontSize(24)     // Scaled from 24px
     }
   };
+
+  // Debug logging (uncomment to debug customization issues)
+  // console.log('🎨 ResumePreview Customization:', customization);
+  // console.log('🎨 Applied Colors:', { primaryColor, secondaryColor });
+  // console.log('🎨 Applied Typography:', templateTypography);
 
   // Get section order and visibility
   const sectionOrder = currentTemplate.sections?.order || ['personal', 'summary', 'experience', 'education', 'skills', 'projects', 'certificates', 'activities'];
@@ -432,7 +448,7 @@ const ResumePreview = forwardRef(({
                       padding: '0 0 0 20px',
                       fontSize: templateTypography.sizes.body,
                       color: templateColors.text,
-                      lineHeight: '1.6'
+                      lineHeight: customization?.lineHeight || 1.6
                     }}>
                       {exp.achievements.map((achievement, achIdx) => (
                         <li key={achIdx} style={{ marginBottom: '4px' }}>
@@ -447,7 +463,7 @@ const ResumePreview = forwardRef(({
                         fontSize: templateTypography.sizes.body,
                         color: templateColors.text,
                         marginTop: '8px',
-                        lineHeight: '1.6'
+                        lineHeight: customization?.lineHeight || 1.6
                       }}>
                         {exp.description}
                       </p>
@@ -565,7 +581,7 @@ const ResumePreview = forwardRef(({
                       <span
                         key={level}
                         style={{
-                          fontSize: '14px',
+                          fontSize: templateTypography.sizes.body,
                           color: level <= skill.proficiency ? '#FBBF24' : '#E5E7EB'
                         }}
                       >
@@ -695,7 +711,7 @@ const ResumePreview = forwardRef(({
   const renderSidebarPersonal = () => {
     return (
       <div className="sidebar-section">
-        <h1 className="sidebar-name" style={{ color: currentTemplate.colors?.primary }}>
+        <h1 className="sidebar-name" style={{ color: templateColors.primary }}>
           {cvData.personal.fullName || 'Your Name'}
         </h1>
         {cvData.personal.email && <p className="sidebar-contact">{cvData.personal.email}</p>}
@@ -722,7 +738,7 @@ const ResumePreview = forwardRef(({
 
     return (
       <div className="sidebar-section">
-        <h2 className="sidebar-title" style={{ color: currentTemplate.colors?.primary }}>
+        <h2 className="sidebar-title" style={{ color: templateColors.primary }}>
           Skills
         </h2>
         <div className="sidebar-skills">
@@ -737,7 +753,7 @@ const ResumePreview = forwardRef(({
                 <div className="skill-bar-container">
                   <div className="skill-bar" style={{
                     width: barWidth,
-                    backgroundColor: currentTemplate.colors?.primary
+                    backgroundColor: templateColors.primary
                   }}></div>
                 </div>
               </div>
@@ -754,7 +770,7 @@ const ResumePreview = forwardRef(({
 
     return (
       <div className="sidebar-section">
-        <h2 className="sidebar-title" style={{ color: currentTemplate.colors?.primary }}>
+        <h2 className="sidebar-title" style={{ color: templateColors.primary }}>
           Languages
         </h2>
         <div className="sidebar-skills">
@@ -764,7 +780,7 @@ const ResumePreview = forwardRef(({
               <div className="skill-bar-container">
                 <div className="skill-bar" style={{
                   width: `${Math.max(70, 95 - i * 10)}%`,
-                  backgroundColor: currentTemplate.colors?.primary
+                  backgroundColor: templateColors.primary
                 }}></div>
               </div>
             </div>
@@ -1118,20 +1134,20 @@ const ResumePreview = forwardRef(({
         </div>
 
         <div className="resume-section">
-          <h2 className="section-title" style={{ color: currentTemplate.colors?.primary }}>Professional Summary</h2>
+          <h2 className="section-title" style={{ color: templateColors.primary }}>Professional Summary</h2>
           <p className="summary-text">{cvData.personal?.summary}</p>
         </div>
 
         <div className="resume-section">
-          <h2 className="section-title" style={{ color: currentTemplate.colors?.primary }}>Career Timeline</h2>
+          <h2 className="section-title" style={{ color: templateColors.primary }}>Career Timeline</h2>
           <div className="timeline-container">
             {cvData.experience?.map((exp) => (
               <div key={exp.id} className="timeline-item">
-                <div className="timeline-marker" style={{ backgroundColor: currentTemplate.colors?.primary }}>
+                <div className="timeline-marker" style={{ backgroundColor: templateColors.primary }}>
                   <div className="timeline-dot"></div>
                 </div>
                 <div className="timeline-content">
-                  <div className="timeline-date" style={{ color: currentTemplate.colors?.primary }}>
+                  <div className="timeline-date" style={{ color: templateColors.primary }}>
                     {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
                   </div>
                   <h3 className="timeline-title">{exp.jobTitle}</h3>
@@ -1142,11 +1158,11 @@ const ResumePreview = forwardRef(({
             ))}
             {cvData.education?.map((edu) => (
               <div key={edu.id} className="timeline-item">
-                <div className="timeline-marker" style={{ backgroundColor: currentTemplate.colors?.secondary }}>
+                <div className="timeline-marker" style={{ backgroundColor: templateColors.secondary }}>
                   <div className="timeline-dot"></div>
                 </div>
                 <div className="timeline-content">
-                  <div className="timeline-date" style={{ color: currentTemplate.colors?.secondary }}>
+                  <div className="timeline-date" style={{ color: templateColors.secondary }}>
                     {edu.startDate} - {edu.endDate}
                   </div>
                   <h3 className="timeline-title">{edu.degree}</h3>
@@ -1158,12 +1174,12 @@ const ResumePreview = forwardRef(({
         </div>
 
         <div className="resume-section">
-          <h2 className="section-title" style={{ color: currentTemplate.colors?.primary }}>Skills</h2>
+          <h2 className="section-title" style={{ color: templateColors.primary }}>Skills</h2>
           <div className="skill-tags">
             {[...(cvData.skills?.technical || []), ...(cvData.skills?.soft || [])].map((skill, i) => (
               <span key={i} className="skill-tag" style={{ 
-                borderColor: currentTemplate.colors?.primary,
-                color: currentTemplate.colors?.primary 
+                borderColor: templateColors.primary,
+                color: templateColors.primary 
               }}>{skill}</span>
             ))}
           </div>
@@ -1199,14 +1215,14 @@ const ResumePreview = forwardRef(({
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <div>
                     <h3 className="item-title">{exp.jobTitle}</h3>
-                    <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>{exp.company}</p>
+                    <p style={{ fontSize: templateTypography.sizes.body, color: '#6B7280', margin: 0 }}>{exp.company}</p>
                   </div>
-                  <span style={{ fontSize: '13px', color: '#6B7280', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: templateTypography.sizes.small, color: '#6B7280', whiteSpace: 'nowrap' }}>
                     {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
                   </span>
                 </div>
                 {exp.description && (
-                  <p style={{ fontSize: '13px', color: '#4B5563', lineHeight: 1.6 }}>
+                  <p style={{ fontSize: templateTypography.sizes.small, color: '#4B5563', lineHeight: customization?.lineHeight || 1.6 }}>
                     {exp.description}
                   </p>
                 )}
@@ -1225,8 +1241,8 @@ const ResumePreview = forwardRef(({
               {cvData.education.map((edu, idx) => (
                 <div key={idx} className="resume-item">
                   <h3 className="item-title">{edu.degree}</h3>
-                  <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>{edu.school}</p>
-                  <span style={{ fontSize: '13px', color: '#6B7280' }}>
+                  <p style={{ fontSize: templateTypography.sizes.body, color: '#6B7280', margin: 0 }}>{edu.school}</p>
+                  <span style={{ fontSize: templateTypography.sizes.small, color: '#6B7280' }}>
                     {edu.startDate} - {edu.endDate}
                   </span>
                 </div>
@@ -1248,7 +1264,7 @@ const ResumePreview = forwardRef(({
                     border: `1.5px solid ${templateColors.primary}`,
                     color: templateColors.primary,
                     borderRadius: '20px',
-                    fontSize: '13px',
+                    fontSize: templateTypography.sizes.small,
                     fontWeight: '500'
                   }}>
                     {skill}
@@ -1286,13 +1302,13 @@ const ResumePreview = forwardRef(({
             </div>
           )}
           <div>
-            <h1 className="resume-name" style={{ color: '#FFFFFF', fontSize: '38px', marginBottom: '10px' }}>
+            <h1 className="resume-name" style={{ color: '#FFFFFF', fontSize: scaleFontSize(38), marginBottom: '10px' }}>
               {cvData.personal.fullName || 'Your Name'}
             </h1>
-            <p style={{ color: '#FFFFFF', opacity: 0.95, fontSize: '16px' }}>
+            <p style={{ color: '#FFFFFF', opacity: 0.95, fontSize: templateTypography.sizes.large }}>
               {cvData.personal.email} • {cvData.personal.phone}
             </p>
-            <p style={{ color: '#FFFFFF', opacity: 0.95, fontSize: '14px', marginTop: '10px' }}>
+            <p style={{ color: '#FFFFFF', opacity: 0.95, fontSize: templateTypography.sizes.body, marginTop: '10px' }}>
               {cvData.personal.summary}
             </p>
           </div>
@@ -1306,12 +1322,12 @@ const ResumePreview = forwardRef(({
               borderRadius: '12px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
             }}>
-              <h2 className="section-title" style={{ color: currentTemplate.colors?.primary, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '24px' }}>💼</span> Experience
+              <h2 className="section-title" style={{ color: templateColors.primary, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: templateTypography.sizes.xlarge }}>💼</span> Experience
               </h2>
               {cvData.experience?.map(exp => (
                 <div key={exp.id} style={{ marginBottom: '15px' }}>
-                  <h3 className="job-title" style={{ fontSize: '16px', fontWeight: '600' }}>{exp.jobTitle}</h3>
+                  <h3 className="job-title" style={{ fontSize: templateTypography.sizes.large, fontWeight: '600' }}>{exp.jobTitle}</h3>
                   <p className="company-name" style={{ color: currentTemplate.colors?.textLight }}>{exp.company}</p>
                 </div>
               ))}
@@ -1323,12 +1339,12 @@ const ResumePreview = forwardRef(({
               borderRadius: '12px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
             }}>
-              <h2 className="section-title" style={{ color: currentTemplate.colors?.primary, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '24px' }}>🎓</span> Education
+              <h2 className="section-title" style={{ color: templateColors.primary, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: templateTypography.sizes.xlarge }}>🎓</span> Education
               </h2>
               {cvData.education?.map(edu => (
                 <div key={edu.id}>
-                  <h3 className="degree-name" style={{ fontSize: '16px', fontWeight: '600' }}>{edu.degree}</h3>
+                  <h3 className="degree-name" style={{ fontSize: templateTypography.sizes.large, fontWeight: '600' }}>{edu.degree}</h3>
                   <p className="school-name" style={{ color: currentTemplate.colors?.textLight }}>{edu.school}</p>
                 </div>
               ))}
@@ -1341,8 +1357,8 @@ const ResumePreview = forwardRef(({
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
               gridColumn: '1 / -1'
             }}>
-              <h2 className="section-title" style={{ color: currentTemplate.colors?.primary, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '24px' }}>⚡</span> Skills
+              <h2 className="section-title" style={{ color: templateColors.primary, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: templateTypography.sizes.xlarge }}>⚡</span> Skills
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', marginTop: '15px' }}>
                 {[...(cvData.skills?.technical || []), ...(cvData.skills?.soft || [])].slice(0, 6).map((skill, i) => (
@@ -1352,17 +1368,17 @@ const ResumePreview = forwardRef(({
                       height: '80px',
                       margin: '0 auto 10px',
                       borderRadius: '50%',
-                      border: `4px solid ${currentTemplate.colors?.primary}`,
+                      border: `4px solid ${templateColors.primary}`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '24px',
+                      fontSize: templateTypography.sizes.xlarge,
                       fontWeight: '700',
-                      color: currentTemplate.colors?.primary
+                      color: templateColors.primary
                     }}>
                       {85 - i * 10}%
                     </div>
-                    <p style={{ fontSize: '14px', fontWeight: '500' }}>{skill}</p>
+                    <p style={{ fontSize: templateTypography.sizes.body, fontWeight: '500' }}>{skill}</p>
                   </div>
                 ))}
               </div>

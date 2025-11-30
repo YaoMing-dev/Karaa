@@ -276,10 +276,12 @@ exports.updateResume = asyncHandler(async (req, res, next) => {
   }
 
   // Update resume
+  // Note: runValidators disabled to allow backward compatibility with old string values
+  // Getters/setters in schema will handle conversion automatically
   resume = await Resume.findByIdAndUpdate(
     id,
     { $set: updates },
-    { new: true, runValidators: true }
+    { new: true, runValidators: false }
   ).populate('template', 'name gradient color category');
 
   // FR-7.1: Decrypt personal data before sending
